@@ -1,0 +1,34 @@
+# Compiler and Flags
+CXX = g++
+CXXFLAGS = -Wall -I$(INC_DIR) -std=c++20
+DEBUG_FLAGS = -g -O0
+
+# Directories
+SRC_DIR = src
+INC_DIR = inc
+OBJ_DIR = obj
+
+SOURCES = $(SRC_DIR)/main.cpp $(SRC_DIR)/suku.cpp
+OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
+
+TARGET = sudoku.exe
+
+all: $(TARGET)
+
+debug: CXXFLAGS += $(DEBUG_FLAGS)
+debug: all
+
+$(TARGET): $(OBJECTS)
+	$(CXX) $(OBJECTS) -o $(TARGET)
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Specific header dependencies
+$(OBJ_DIR)/main.o: $(INC_DIR)/suku.h
+$(OBJ_DIR)/suku.o: $(INC_DIR)/suku.h
+
+.PHONY: all debug clean
+clean:
+	rm -rf $(OBJECTS) $(TARGET)
+
