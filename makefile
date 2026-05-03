@@ -1,6 +1,6 @@
 # Compiler and Flags
 CXX = g++
-CXXFLAGS = -Wall -I$(INC_DIR) -std=c++20
+CXXFLAGS = -Wall -I$(INC_DIR) -std=c++20 -MMD -MP
 DEBUG_FLAGS = -g -O0
 
 # Directories
@@ -42,3 +42,4 @@ clean:
 
 .PHONY: all debug clean
 
+#-include $(OBJECTS: .o=.d)

@@ -1,5 +1,6 @@
 #ifndef SUKU_H
 #define SUKU_H
+#include <bit>
 #include <bitset>
 #include <cstdint>
 #include <string>
@@ -22,9 +23,10 @@ public:
         std::unordered_set<int> membersSet;
         std::bitset<9> popen[9];
     };
+    
     struct Placement {
         uint16_t p;
-        std::bitset<9> alts;
+        std::bitset<10> alts;
     };
 
     Posn posn[81];
@@ -60,6 +62,7 @@ public:
     
     bool readMatrix(std::string filename, int* flatArray);
     void writeMatrix(int* flatArray);
+    void add_placement(const Placement& plcmnt);
 };
 
 #endif

@@ -1,6 +1,4 @@
 #include "suku.h"
-
-//#include <cstdint>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -27,7 +25,7 @@ void Suku::writeMatrix(int* flatArray) {
         int col = i % 9;
 
         // Print the number with a consistent width
-        std::cout << std::setw(2) << flatArray[i] << " ";
+        std::cout << std::setw(1) << flatArray[i] << " ";
 
         // extra gap after 3 numbers
         if ((col + 1) % 3 == 0 && (col + 1) % 9 != 0) {
@@ -44,4 +42,11 @@ void Suku::writeMatrix(int* flatArray) {
             }
         }
     }
+}
+
+void Suku::add_placement(const Placement& plcmnt) {
+    int px = (int)plcmnt.p;
+    int v = plcmnt.alts._Find_first();
+    std::cout << "plcmnt: " << px << ", " << v << std::endl;
+    return;
 }
