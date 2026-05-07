@@ -12,7 +12,7 @@ OBJ_DIR = obj
 SOURCES = $(SRC_DIR)/main.cpp $(SRC_DIR)/suku.cpp
 # This transforms src/file.cpp into obj/file.o
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
-TARGET = sudoku.exe
+TARGET = sudoku
 
 # Default Rule (release)
 all: $(OBJ_DIR) $(TARGET)

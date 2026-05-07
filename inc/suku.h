@@ -16,12 +16,12 @@ public:
         int ci;
         int b;
         int bi;
-        std::bitset<9> vopen;
+        std::bitset<10> vopen;
     };
     struct Grp {
         std::vector<int> members;
         std::unordered_set<int> membersSet;
-        std::bitset<9> popen[9];
+        std::bitset<10> popen[9];
     };
     
     struct Placement {
@@ -34,7 +34,7 @@ public:
     Grp col[9];
     Grp blk[9];
     int spot[10][9][9] = {};
-    std::vector<Placement> stk;
+    std::vector<Placement> stk = {};
     std::vector<int> branchStk;
 
     Suku() {
@@ -60,9 +60,15 @@ public:
         }
     }
     
-    bool readMatrix(std::string filename, int* flatArray);
-    void writeMatrix(int* flatArray);
-    void add_placement(const Placement& plcmnt);
+    int valArray[81];
+
+    bool readBoard(std::string filename);
+    void writeBoard();
+    int check_placement(const int p, const int v);
+    void adjust_for_add(int py, int vx);
+    void adjust_for_remove(int py, int vx);
+    int add_placement(const int p, const int v);
+    void remove_placement(const int p, const int v);
 };
 
 #endif

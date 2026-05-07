@@ -2,14 +2,15 @@
 #include <iostream>
 
 int main() {
-    int flatArray[81] = {};
     Suku suku;
 
-    suku.readMatrix("data/pz001.txt", flatArray);
-    suku.writeMatrix(flatArray);
+    suku.readBoard("data/pz001.txt");
+    suku.writeBoard();
 
     Suku::Placement plcmnt = {53, 0b0010010000};
-    suku.add_placement(plcmnt);
+    int vx = plcmnt.alts._Find_first();
+    std::cout << "vx: " << vx << std::endl;
+    suku.add_placement( 53, vx );
 
     return 0;
 }
