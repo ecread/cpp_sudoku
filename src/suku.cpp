@@ -14,17 +14,55 @@ bool Suku::readBoard(const std::string filename) {
     }
     for (int i = 0; i < 81; ++i) {
         if (!(file >> valArray[i])) {
+            std::cout << "Too few values in starting board" << std::endl;
             return false;
         }
     }
-    // Initialize
-    for (int i = 0; i < 81; i++) {
-        uint16_t v = valArray[i];
+
+    // Check legality
+    uint8_t rowValToPosnIndx[9][10];
+    uint8_t colValToPosnIndx[9][10];
+    uint8_t blkValToPosnIndx[9][10];
+    uint8_t posnToVal[81];
+
+    for (int pi = 0; pi < 81; pi++) {
+        int v = valArray[pi];
+        int r = posn[pi].r;
+        int c = posn[pi].c;
+        int b = posn[pi].b;
+        int ri = posn[pi].ri;
+        int ci = posn[pi].ci;
+        int bi = posn[pi].bi;
         if (v) {
-            spot[0][posn[i].r][posn[i].c] = v;
+            if (rowValToPosnIndx[r][v] != 0 && rowValToPosnIndx[r][v] != ri) {
+                std::cout << "value " << v << " is duplicated in row " << r << std::endl;
+                return false;
+            } else {
+                rowValToPosnIndx[r][v] = ri;
+            }
+            if (colValToPosnIndx[c][v] != 0 && colValToPosnIndx[c][v] != ci) {
+                std::cout << "value " << v << " is duplicated in col " << c << std::endl;
+                return false;
+            } else {
+                colValToPosnIndx[c][v] = ci;
+            }
+            if (blkValToPosnIndx[b][v] != 0 && blkValToPosnIndx[b][v] != bi) {
+                std::cout << "value " << v << " is duplicated in blk " << b << std::endl;
+                return false;
+            } else {
+                blkValToPosnIndx[b][v] = bi;
+            }
+            if (posnToVal[pi] != 0 && posnToVal[pi] != v) {
+                std::cout << "Attempt to place two values at posn " << pi << std::endl;
+                return false;
+            } else {
+                posnToVal[pi] = v;
+            }
         }
 
-        stk.emplace_back( (uint16_t)i, 0b0000000000 | 1 << v );
+        spot[0][r][c] = v;
+        add_placement(pi, v);
+        stk.emplace_back(pi, 0b0000000000 | 1 << v);
     }
     return true;
 }

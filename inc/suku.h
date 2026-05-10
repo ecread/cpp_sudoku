@@ -21,7 +21,16 @@ public:
     struct Grp {
         std::vector<int> members;
         std::unordered_set<int> membersSet;
-        std::bitset<10> popen[9];
+        /*
+        popen[5] = 0b00000010100 (for example)
+        */
+        std::bitset<9> popen[10];
+        /*
+        valToPosn[3] = 7 (for example) means:
+        the value 3 is set on
+        the Grp member (a position) indexed by 7
+        */
+        int valToPosn[10];
     };
     
     struct Placement {
@@ -59,8 +68,6 @@ public:
             posn[i].bi = bi;
         }
     }
-    
-    int valArray[81];
 
     bool readBoard(std::string filename);
     void writeBoard();
