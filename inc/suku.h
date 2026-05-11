@@ -1,5 +1,6 @@
 #ifndef SUKU_H
 #define SUKU_H
+
 #include <bit>
 #include <bitset>
 #include <cstdint>
@@ -10,21 +11,21 @@
 class Suku {
 public:
     struct Posn {
-        int r;
-        int ri;
-        int c;
-        int ci;
-        int b;
-        int bi;
+        // for posn i, the row, col and blk index
+        int rcb[3];
+        // for posn i, the member index in row,col, blk
+        int rcbIdx[3]; 
         std::bitset<10> vopen;
     };
     struct Grp {
         std::vector<int> members;
         std::unordered_set<int> membersSet;
+
         /*
         popen[5] = 0b00000010100 (for example)
         */
         std::bitset<9> popen[10];
+
         /*
         valToPosn[3] = 7 (for example) means:
         the value 3 is set on
@@ -38,34 +39,40 @@ public:
         std::bitset<10> alts;
     };
 
-    Posn posn[81];
-    Grp row[9];
-    Grp col[9];
-    Grp blk[9];
+    Posn posn[81] = {};
+    Grp grp[3][9] = {};
+
     int spot[10][9][9] = {};
     std::vector<Placement> stk = {};
     std::vector<int> branchStk;
+
+    std::vector<Placement> candidatePlcmnts;
 
     Suku() {
         for (int i = 0; i < 81; i++) {
             int r = i / 9;
             int c = i % 9;
             int b = (r / 3) * 3 + (c / 3);
-            posn[i].r = r;
-            posn[i].c = c;
-            posn[i].b = b;
-            row[r].members.push_back(i);
-            row[r].membersSet.insert(i);
-            int ri = row[r].members.size() - 1;
-            posn[i].ri = ri;
-            col[c].members.push_back(i);
-            col[c].membersSet.insert(i);
-            int ci = col[c].members.size() - 1;
-            posn[i].ci = ci;
-            blk[b].members.push_back(i);
-            blk[b].membersSet.insert(i);
-            int bi = blk[b].members.size() - 1;
-            posn[i].bi = bi;
+
+            posn[i].rcb[0] = r;
+            posn[i].rcb[1] = c;
+            posn[i].rcb[2] = b;
+
+            grp[0][r].members.push_back(i);
+            grp[0][r].membersSet.insert(i);
+            int ri = grp[0][r].members.size() - 1;
+
+            grp[1][c].members.push_back(i);
+            grp[1][c].membersSet.insert(i);
+            int ci = grp[1][c].members.size() - 1;
+
+            grp[2][b].members.push_back(i);
+            grp[2][b].membersSet.insert(i);
+            int bi = grp[2][b].members.size() - 1;
+
+            posn[i].rcbIdx[0] = ri;
+            posn[i].rcbIdx[1] = ci;
+            posn[i].rcbIdx[2] = bi;
         }
     }
 
@@ -74,7 +81,7 @@ public:
     int check_placement(const int p, const int v);
     void adjust_for_add(int py, int vx);
     void adjust_for_remove(int py, int vx);
-    int add_placement(const int p, const int v);
+    void add_placement(const int p, const int v);
     void remove_placement(const int p, const int v);
 };
 
