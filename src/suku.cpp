@@ -65,7 +65,7 @@ bool Suku::readBoard(const std::string filename) {
         }
     }
 
-    for (size_t i; i < candidatePlcmnts.size(); i++) {
+    for (size_t i = 0; i < candidatePlcmnts.size(); i++) {
         Placement plcmnt = candidatePlcmnts[i];
         add_placement(plcmnt.p, plcmnt.alts._Find_first());
     }
