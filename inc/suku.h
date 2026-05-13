@@ -41,12 +41,21 @@ public:
 
     Posn posn[81] = {};
     Grp grp[3][9] = {};
-
     int spot[10][9][9] = {};
-    std::vector<Placement> stk = {};
-    std::vector<int> branchStk;
 
-    std::vector<Placement> candidatePlcmnts;
+    // Each time a placement is added to the board
+    // set the stk member indexed by stkCtr to its value
+    // and increment stkCtr
+    Placement stk[81];
+    // Count of placements added to board
+    int stkCtr = 0;
+    // Store candidate placements
+    Placement tmp[81];
+    // Count of placement candidates
+    int tmpCtr = 0;
+    // For backtracking, push the value of stkCtr when
+    // a placement with alternatives has been added to stk
+    std::vector<int> branchStk;
 
     Suku() {
         for (int i = 0; i < 81; i++) {

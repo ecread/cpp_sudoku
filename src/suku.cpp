@@ -25,7 +25,7 @@ bool Suku::readBoard(const std::string filename) {
     int blkValToPosnIndx[9][10] = {};
     int posnToVal[81] = {};
 
-    candidatePlcmnts.clear();
+    tmpCtr = 0;
 
     for (int pi = 0; pi < 81; pi++) {
         int v = valArray[pi];
@@ -61,14 +61,19 @@ bool Suku::readBoard(const std::string filename) {
                 posnToVal[pi] = v;
             }
             //add_placement(pi, v);
-            candidatePlcmnts.emplace_back(pi, 0b0000000000 | 1 << v);
+            //candidatePlcmnts.emplace_back(pi, 0b0000000000 | 1 << v);
+            tmp[tmpCtr++] = {(uint16_t)pi, 0b0000000000 | 1 << v};
         }
     }
 
-    for (size_t i = 0; i < candidatePlcmnts.size(); i++) {
-        Placement plcmnt = candidatePlcmnts[i];
-        add_placement(plcmnt.p, plcmnt.alts._Find_first());
+    for (int i = 0; i < tmpCtr; i++) {
+        stk[stkCtr] = tmp[i];
+        add_placement(stk[stkCtr].p, stk[stkCtr].alts._Find_first());
+        stkCtr++;
     }
+
+    std::cout << "Initial count of placements: "
+              << stkCtr << std::endl;
 
     return true;
 }
