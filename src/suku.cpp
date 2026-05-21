@@ -25,7 +25,7 @@ bool Suku::readBoard(const std::string filename) {
     int blkValToPosnIndx[9][10] = {};
     int posnToVal[81] = {};
 
-    tmpCtr = 0;
+    tmpStkCtr = 0;
 
     for (int pi = 0; pi < 81; pi++) {
         int v = valArray[pi];
@@ -62,12 +62,12 @@ bool Suku::readBoard(const std::string filename) {
             }
             //add_placement(pi, v);
             //candidatePlcmnts.emplace_back(pi, 0b0000000000 | 1 << v);
-            tmp[tmpCtr++] = {(uint16_t)pi, 0b0000000000 | 1 << v};
+            tmpStk[tmpStkCtr++] = {(uint16_t)pi, 0b0000000000 | 1 << v};
         }
     }
 
-    for (int i = 0; i < tmpCtr; i++) {
-        stk[stkCtr] = tmp[i];
+    for (int i = 0; i < tmpStkCtr; i++) {
+        stk[stkCtr] = tmpStk[i];
         add_placement(stk[stkCtr].p, stk[stkCtr].alts._Find_first());
         stkCtr++;
     }
@@ -135,10 +135,12 @@ int Suku::check_placement(const int px, const int vx) {
 void Suku::adjust_for_add(int py, int vx) {
     // py: posn index, vx: value
     spot[vx][posn[py].rcb[0]][posn[py].rcb[1]] += 1;
-    for (int i = 0; i < 3; i++) {
-        grp[i][posn[py].rcb[i]].popen[vx].set(posn[py].rcbIdx[i]);
+    if (spot[vx][posn[py].rcb[0]][posn[py].rcb[1]] == 1) {
+        for (int i = 0; i < 3; i++) {
+            grp[i][posn[py].rcb[i]].popen[vx].set(posn[py].rcbIdx[i]);
+        }
+        posn[py].vopen.set(vx);
     }
-    posn[py].vopen.set(vx);
 }
 
 void Suku::adjust_for_remove(int py, int vx) {
@@ -152,7 +154,7 @@ void Suku::adjust_for_remove(int py, int vx) {
     }
 }
 
-void Suku::add_placement(const int px, const int vx) {
+void Suku::add_placement(int px, const int vx) {
     // Check: -1 => rule violation, 0 => OK, 1 => simple duplication
     // int indic = check_placement(px, vx);
     // if (indic) { return indic; }
@@ -167,56 +169,26 @@ void Suku::add_placement(const int px, const int vx) {
     // add to level 0 for board
     spot[0][rcbx[0]][rcbx[1]] = vx;
 
-    // int rx = posn[px].rcb[0];
-    // int cx = posn[px].rcb[1];
-    // int bx = posn[px].rcb[2];
-    // for (int py : grp[0][rx].membersSet) {
-    //     // Adjust spot, popen and vopen values
-    //     adjust_for_add(py, vx);
-    // }
-    // for (int py : grp[1][cx].membersSet) {
-    //     // Adjust spot, popen and vopen values
-    //     adjust_for_add(py, vx);
-    // }
-    // for (int py : grp[2][bx].membersSet) {
-    //     // Adjust spot, popen and vopen values
-    //     adjust_for_add(py, vx);
-    // }
-
     for (int i = 0; i < 3; i++) {
-        for (int py : grp[i][rcbx[i]].membersSet) {
+        //for (int py : grp[i][rcbx[i]].membersSet) {
+        for (int j = 0; j < 9; j++) {
+            int py = grp[i][rcbx[i]].members[j];
             // Adjust spot, popen and vopen values
             adjust_for_add(py, vx); 
+	        //std::cout << "adjust_for_add: " << py << "," << vx;
         } 
     }
-
-    // for (int vv = 1; vv < 10; vv++) {
-    //     spot[vv][posn[px].r][posn[px].c] += 1;
-    //     posn[px].vopen.set(vv);
-    // }
-
     for (int vv = 1; vv < 10; vv++) {
-        spot[vv][rcbx[0]][rcbx[1]] += 1;
-        posn[px].vopen.set(vv);
+        adjust_for_add(px, vv);
     }
-
-    // grp[0][rx].membersSet.erase(px);
-    // grp[1][cx].membersSet.erase(px);
-    // grp[2][bx].membersSet.erase(px);
-
     for (int i = 0; i < 3; i++) {
         grp[i][rcbx[i]].membersSet.erase(px);
     }
-
     return;
 }
 
 void Suku::remove_placement(const int px, const int vx) {
     std::cout << "remove plcmnt: " << px << ", " << vx << std::endl;
-
-    // int rx = posn[px].rcb[0];
-    // int cx = posn[px].rcb[1];
-    // int bx = posn[px].rcb[2];
 
     int rcbx[3];
     for (int i = 0; i < 3; i++) {
@@ -226,44 +198,18 @@ void Suku::remove_placement(const int px, const int vx) {
     // erase from level 0
     spot[0][rcbx[0]][rcbx[1]] = 0;
 
-
-    // for (int py : grp[0][rx].membersSet) {
-    //     // Adjust spot, popen and vopen values
-    //     adjust_for_remove(py, vx);
-    // }
-    // for (int py : grp[1][cx].membersSet) {
-    //     // Adjust spot, popen and vopen values
-    //     adjust_for_remove(py, vx);
-    // }
-    // for (int py : grp[2][bx].membersSet) {
-    //     // Adjust spot, popen and vopen values
-    //     adjust_for_remove(py, vx);
-    // }
-
     for (int i = 0; i < 3; i++) {
-        for (int py : grp[i][rcbx[i]].membersSet) {
+        //for (int py : grp[i][rcbx[i]].membersSet) {
+        for (int j = 0; j < 9; j++) {
+            int py = grp[i][rcbx[i]].members[j];
             // Adjust spot, popen and vopen values
             adjust_for_remove(py, vx);
         }
     }
 
-    // for (int vv = 1; vv < 10; vv++) {
-    //     spot[vv][posn[px].rcb[0]][posn[px].rcb[1]] -= 1;
-    //     if (spot[vv][posn[px].rcb[0]][posn[px].rcb[1]] == 0) {
-    //         posn[px].vopen.reset(vv);
-    //     }
-    // }
-
     for (int vv = 1; vv < 10; vv++) {
-        spot[vv][rcbx[0]][rcbx[1]] -= 1;
-        if (spot[vv][rcbx[0]][rcbx[1]] == 0) {
-            posn[px].vopen.set(vv);
-        }
+        adjust_for_remove(px, vv);
     }
-
-    // grp[0][rx].membersSet.insert(px);
-    // grp[1][cx].membersSet.insert(px);
-    // grp[2][bx].membersSet.insert(px);
 
     for (int i = 0; i < 3; i++) {
         grp[i][rcbx[i]].membersSet.insert(px);
@@ -271,3 +217,28 @@ void Suku::remove_placement(const int px, const int vx) {
 
     return;
 }
+
+bool Suku::find_placements() {
+    std::bitset<9> tmp;
+    tmpStkCtr = 0;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 9; j++) {
+            for (int k = 1; k < 10; k++) {
+                tmp = ~(grp[i][j].popen[k]);
+                if (tmp.count() == 1) {
+                    // find the only open position
+                    int pix = tmp._Find_first();
+                    int py = grp[i][j].members[pix];
+                    std::cout << "Found candidate: " << py << ", " << k << std::endl;
+                    tmpStk[tmpStkCtr++] = {(uint16_t)py, 0b0000000000 | 1 << k};
+                }
+            }
+        }
+    }
+    return true;
+}
+
+bool Suku::find_alt_placement() {
+    return true;
+}
+

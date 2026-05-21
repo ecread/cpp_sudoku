@@ -24,14 +24,14 @@ public:
         /*
         popen[5] = 0b00000010100 (for example)
         */
-        std::bitset<9> popen[10];
+        std::bitset<9> popen[10] = {};
 
         /*
         valToPosn[3] = 7 (for example) means:
         the value 3 is set on
         the Grp member (a position) indexed by 7
-        */
         int valToPosn[10];
+        */
     };
     
     struct Placement {
@@ -50,9 +50,9 @@ public:
     // Count of placements added to board
     int stkCtr = 0;
     // Store candidate placements
-    Placement tmp[81];
+    Placement tmpStk[81];
     // Count of placement candidates
-    int tmpCtr = 0;
+    int tmpStkCtr = 0;
     // For backtracking, push the value of stkCtr when
     // a placement with alternatives has been added to stk
     std::vector<int> branchStk;
@@ -90,6 +90,8 @@ public:
     int check_placement(const int p, const int v);
     void adjust_for_add(int py, int vx);
     void adjust_for_remove(int py, int vx);
+    bool find_placements();
+    bool find_alt_placement();
     void add_placement(const int p, const int v);
     void remove_placement(const int p, const int v);
 };

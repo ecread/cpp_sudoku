@@ -8,6 +8,8 @@ int main() {
         std::cout << std::endl;
         suku.writeBoard();
     }
+    std::cout << std::endl;
+    suku.find_placements();
     
     // Suku::Placement plcmnt = {53, 0b0010010000};
     // int vx = plcmnt.alts._Find_first();
