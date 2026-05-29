@@ -92,7 +92,7 @@ public:
     void adjust_for_remove(int py, int vx);
     bool find_placements();
     bool find_alt_placement();
-    void add_placement(const int p, const int v);
+    int add_placement(const int p, const int v);
     void remove_placement(const int p, const int v);
 };
 

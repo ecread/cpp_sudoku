@@ -103,7 +103,7 @@ void Suku::writeBoard() {
     }
 }
 
-int Suku::check_placement(const int px, const int vx) {
+int Suku::check_placement(int px, int vx) {
     /*
     Check the placement. If it:
         is a rule violation, return -1
@@ -114,7 +114,7 @@ int Suku::check_placement(const int px, const int vx) {
     int cx = posn[px].rcb[1];
     int bx = posn[px].rcb[2];
 
-    int v = spot[vx][rx][cx];
+    int v = spot[0][rx][cx];
     if (v > 0) {
         if (v == vx )  { return 1; } // already added
         if (v != vx )  { return -1; } // value clash at position
@@ -154,7 +154,7 @@ void Suku::adjust_for_remove(int py, int vx) {
     }
 }
 
-void Suku::add_placement(int px, const int vx) {
+int Suku::add_placement(int px, int vx) {
     // Check: -1 => rule violation, 0 => OK, 1 => simple duplication
     // int indic = check_placement(px, vx);
     // if (indic) { return indic; }
@@ -167,6 +167,13 @@ void Suku::add_placement(int px, const int vx) {
     }
 
     // add to level 0 for board
+    if (spot[0][rcbx[0]][rcbx[1]] != 0) {
+        if (spot[0][rcbx[0]][rcbx[1]] == vx) {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
     spot[0][rcbx[0]][rcbx[1]] = vx;
 
     for (int i = 0; i < 3; i++) {
@@ -184,10 +191,10 @@ void Suku::add_placement(int px, const int vx) {
     for (int i = 0; i < 3; i++) {
         grp[i][rcbx[i]].membersSet.erase(px);
     }
-    return;
+    return 0;
 }
 
-void Suku::remove_placement(const int px, const int vx) {
+void Suku::remove_placement(int px, int vx) {
     std::cout << "remove plcmnt: " << px << ", " << vx << std::endl;
 
     int rcbx[3];
@@ -221,18 +228,38 @@ void Suku::remove_placement(const int px, const int vx) {
 bool Suku::find_placements() {
     std::bitset<9> tmp;
     tmpStkCtr = 0;
+    int rslt = 0;
+    bool found_forced = false;
+    bool found_violation = false;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 9; j++) {
-            for (int k = 1; k < 10; k++) {
-                tmp = ~(grp[i][j].popen[k]);
+            for (int v = 1; v < 10; v++) {
+                tmp = ~(grp[i][j].popen[v]);
                 if (tmp.count() == 1) {
+                    found_forced = true;
                     // find the only open position
                     int pix = tmp._Find_first();
                     int py = grp[i][j].members[pix];
-                    std::cout << "Found candidate: " << py << ", " << k << std::endl;
-                    tmpStk[tmpStkCtr++] = {(uint16_t)py, 0b0000000000 | 1 << k};
+                    std::cout << "Found candidate: " << py << ", " << v << std::endl;
+                    rslt = add_placement(py, v);
+                    if (rslt == 1) {
+                        std::cout << "duplicate" << std::endl;
+                        continue;
+                    } else if (rslt == -1) {
+                        found_violation = true;
+                        break;
+                    } else {
+                        found_forced;
+                        continue;
+                    }
                 }
             }
+            if (found_violation) {
+                break;
+            }
+        }
+        if (found_violation) {
+            break;
         }
     }
     return true;
