@@ -19,57 +19,15 @@ bool Suku::readBoard(const std::string filename) {
         }
     }
 
-    // Check legality
-    int rowValToPosnIndx[9][10] = {};
-    int colValToPosnIndx[9][10] = {};
-    int blkValToPosnIndx[9][10] = {};
-    int posnToVal[81] = {};
-
-    tmpStkCtr = 0;
-
     for (int pi = 0; pi < 81; pi++) {
         int v = valArray[pi];
-        int r = posn[pi].rcb[0];
-        int c = posn[pi].rcb[1];
-        int b = posn[pi].rcb[2];
-        int ri = posn[pi].rcbIdx[0];
-        int ci = posn[pi].rcbIdx[1];
-        int bi = posn[pi].rcbIdx[2];
         if (v) {
-            if (rowValToPosnIndx[r][v] != 0 && rowValToPosnIndx[r][v] != ri) {
-                std::cout << "value " << v << " is duplicated in row " << r << std::endl;
+            if ( add_placement({(uint16_t)pi, 0b0000000000 | 1 << v}) == -1) {
+                std::cout << "Board has rule violation at position: "
+                    << pi << ", terminating" << std::endl;
                 return false;
-            } else {
-                rowValToPosnIndx[r][v] = ri;
             }
-            if (colValToPosnIndx[c][v] != 0 && colValToPosnIndx[c][v] != ci) {
-                std::cout << "value " << v << " is duplicated in col " << c << std::endl;
-                return false;
-            } else {
-                colValToPosnIndx[c][v] = ci;
-            }
-            if (blkValToPosnIndx[b][v] != 0 && blkValToPosnIndx[b][v] != bi) {
-                std::cout << "value " << v << " is duplicated in blk " << b << std::endl;
-                return false;
-            } else {
-                blkValToPosnIndx[b][v] = bi;
-            }
-            if (posnToVal[pi] != 0 && posnToVal[pi] != v) {
-                std::cout << "Attempt to place two values at posn " << pi << std::endl;
-                return false;
-            } else {
-                posnToVal[pi] = v;
-            }
-            //add_placement(pi, v);
-            //candidatePlcmnts.emplace_back(pi, 0b0000000000 | 1 << v);
-            tmpStk[tmpStkCtr++] = {(uint16_t)pi, 0b0000000000 | 1 << v};
         }
-    }
-
-    for (int i = 0; i < tmpStkCtr; i++) {
-        stk[stkCtr] = tmpStk[i];
-        add_placement(stk[stkCtr].p, stk[stkCtr].alts._Find_first());
-        stkCtr++;
     }
 
     std::cout << "Initial count of placements: "
@@ -110,23 +68,24 @@ int Suku::check_placement(int px, int vx) {
         is a duplicate, return 1
         is OK at this stage, return 0
     */
-    int rx = posn[px].rcb[0];
-    int cx = posn[px].rcb[1];
-    int bx = posn[px].rcb[2];
 
-    int v = spot[0][rx][cx];
-    if (v > 0) {
-        if (v == vx )  { return 1; } // already added
-        if (v != vx )  { return -1; } // value clash at position
+    int rcbx[3];
+    for (int i = 0; i < 3; i++) {
+        rcbx[i] = posn[px].rcb[i];
     }
-    if (grp[0][rx].popen[vx].count() == 9) {
-        return -1; // would duplicate value in row
-    }
-    if (grp[1][cx].popen[vx].count() == 9) {
-        return -1; // would duplicate value in col
-    }
-    if (grp[2][bx].popen[vx].count() == 9) {
-        return -1; // would duplicate value in grp[2]
+
+    if (spot[0][rcbx[0]][rcbx[1]] != 0) {
+        if (spot[0][rcbx[0]][rcbx[1]] == vx) {
+            return 1; // found duplicate
+        } else {
+            return -1; // violation: position has placement with another value
+        }
+    } else {
+        for (int i = 0; i < 3; i++) {
+            if (grp[i][rcbx[i]].popen[vx].test(posn[px].rcbIdx[i]) != 0) {
+                return -1; // violation: would duplicate value in row, col or block
+            }
+        }
     }
 
     return 0;
@@ -154,26 +113,30 @@ void Suku::adjust_for_remove(int py, int vx) {
     }
 }
 
-int Suku::add_placement(int px, int vx) {
+//int Suku::add_placement(int px, int vx) {
+int Suku::add_placement(Placement plcmntx) {
     // Check: -1 => rule violation, 0 => OK, 1 => simple duplication
     // int indic = check_placement(px, vx);
     // if (indic) { return indic; }
 
-    std::cout << "add plcmnt: " << px << ", " << vx << std::endl;
+    int px = plcmntx.p;
+    std::bitset<10> altsx = plcmntx.alts;
+    int vx = altsx._Find_first();
 
+    int checkVal;
     int rcbx[3];
     for (int i = 0; i < 3; i++) {
         rcbx[i] = posn[px].rcb[i];
     }
 
-    // add to level 0 for board
-    if (spot[0][rcbx[0]][rcbx[1]] != 0) {
-        if (spot[0][rcbx[0]][rcbx[1]] == vx) {
-            return 1;
-        } else {
-            return -1;
-        }
+    // Check candidate placement
+    checkVal = check_placement(px, vx);
+    if (checkVal != 0) {
+        return checkVal;
     }
+
+    std::cout << "add plcmnt: " << px << ", " << vx << std::endl;
+    // add to level 0 for board
     spot[0][rcbx[0]][rcbx[1]] = vx;
 
     for (int i = 0; i < 3; i++) {
@@ -191,6 +154,11 @@ int Suku::add_placement(int px, int vx) {
     for (int i = 0; i < 3; i++) {
         grp[i][rcbx[i]].membersSet.erase(px);
     }
+
+    // Add to stack
+    //stk[stkCtr++] = {(uint16_t)px, 0b0000000000 | 1 << vx};
+    stk[stkCtr++] = plcmntx;
+
     return 0;
 }
 
@@ -241,7 +209,8 @@ bool Suku::find_placements() {
                     int pix = tmp._Find_first();
                     int py = grp[i][j].members[pix];
                     std::cout << "Found candidate: " << py << ", " << v << std::endl;
-                    rslt = add_placement(py, v);
+                    
+                    rslt = add_placement( {(uint16_t)py, 0b0000000000 | 1 << v} );
                     if (rslt == 1) {
                         std::cout << "duplicate" << std::endl;
                         continue;
