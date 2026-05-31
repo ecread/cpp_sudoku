@@ -49,10 +49,6 @@ public:
     Placement stk[81];
     // Count of placements added to board
     int stkCtr = 0;
-    // Store candidate placements
-    Placement tmpStk[81];
-    // Count of placement candidates
-    int tmpStkCtr = 0;
     // For backtracking, push the value of stkCtr when
     // a placement with alternatives has been added to stk
     std::vector<int> branchStk;
@@ -63,25 +59,15 @@ public:
             int c = i % 9;
             int b = (r / 3) * 3 + (c / 3);
 
-            posn[i].rcb[0] = r;
-            posn[i].rcb[1] = c;
-            posn[i].rcb[2] = b;
+            posn[i].rcb[0] = r;  // row
+            posn[i].rcb[1] = c;  // column
+            posn[i].rcb[2] = b;  // sub-block
 
-            grp[0][r].members.push_back(i);
-            grp[0][r].membersSet.insert(i);
-            int ri = grp[0][r].members.size() - 1;
-
-            grp[1][c].members.push_back(i);
-            grp[1][c].membersSet.insert(i);
-            int ci = grp[1][c].members.size() - 1;
-
-            grp[2][b].members.push_back(i);
-            grp[2][b].membersSet.insert(i);
-            int bi = grp[2][b].members.size() - 1;
-
-            posn[i].rcbIdx[0] = ri;
-            posn[i].rcbIdx[1] = ci;
-            posn[i].rcbIdx[2] = bi;
+            for (int j = 0; j < 3; j++) {
+                grp[j][posn[i].rcb[j]].members.push_back(i); // vector of members in r, c, b
+                posn[i].rcbIdx[j] = grp[j][posn[i].rcb[j]].members.size() - 1; // index of member i in r, c, b
+                grp[j][posn[i].rcb[j]].membersSet.insert(i); // unordered set of members in r, c, b
+            }
         }
     }
 
@@ -94,7 +80,8 @@ public:
     bool find_alt_placement();
     //int add_placement(const int p, const int v);
     int add_placement(Placement plcmntx);
-    void remove_placement(const int p, const int v);
+    void remove_placement(Placement plcmntx);
+    int solve();
 };
 
 #endif

@@ -162,7 +162,12 @@ int Suku::add_placement(Placement plcmntx) {
     return 0;
 }
 
-void Suku::remove_placement(int px, int vx) {
+void Suku::remove_placement(Placement plcmntx) {
+
+    int px = plcmntx.p;
+    std::bitset<10> altsx = plcmntx.alts;
+    int vx = altsx._Find_first();
+
     std::cout << "remove plcmnt: " << px << ", " << vx << std::endl;
 
     int rcbx[3];
@@ -195,7 +200,6 @@ void Suku::remove_placement(int px, int vx) {
 
 bool Suku::find_placements() {
     std::bitset<9> tmp;
-    tmpStkCtr = 0;
     int rslt = 0;
     bool found_forced = false;
     bool found_violation = false;
@@ -238,3 +242,28 @@ bool Suku::find_alt_placement() {
     return true;
 }
 
+int Suku::solve() {
+    /*
+    Repeatedly call find_placements() while it returns true
+    and the count of placments on the board is less than 81.
+    If 81 placements can be installed, return 0 if there are
+    no alternatives to try, else return 1.
+    If find_placements() returns false, it has encountered
+    a rule violation; in this case return -1.
+    */
+    while (true) {
+        if ( find_placements() ) {
+            if (stkCtr == 81) {
+                if (branchStk.size() == 0) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            } else {
+                continue;
+            }
+        } else {
+            return -1;
+        }
+    }
+}
