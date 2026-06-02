@@ -20,18 +20,7 @@ public:
     struct Grp {
         std::vector<int> members;
         std::unordered_set<int> membersSet;
-
-        /*
-        popen[5] = 0b00000010100 (for example)
-        */
         std::bitset<9> popen[10] = {};
-
-        /*
-        valToPosn[3] = 7 (for example) means:
-        the value 3 is set on
-        the Grp member (a position) indexed by 7
-        int valToPosn[10];
-        */
     };
     
     struct Placement {
@@ -59,9 +48,9 @@ public:
             int c = i % 9;
             int b = (r / 3) * 3 + (c / 3);
 
-            posn[i].rcb[0] = r;  // row
-            posn[i].rcb[1] = c;  // column
-            posn[i].rcb[2] = b;  // sub-block
+            posn[i].rcb[0] = r;  // row of posn[i]
+            posn[i].rcb[1] = c;  // column of posn[i]
+            posn[i].rcb[2] = b;  // sub-block of posn[i]
 
             for (int j = 0; j < 3; j++) {
                 grp[j][posn[i].rcb[j]].members.push_back(i); // vector of members in r, c, b

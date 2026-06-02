@@ -199,42 +199,105 @@ void Suku::remove_placement(Placement plcmntx) {
 }
 
 bool Suku::find_placements() {
-    std::bitset<9> tmp;
-    int rslt = 0;
+    std::bitset<9> bits9;
+    std::bitset<10> bits10;
+    int addRslt = 0;
     bool found_forced = false;
-    bool found_violation = false;
+    Placement plcmnt;
+
+    int altsCnt = 9;
+    int cnt;
+    int ix;
+
+    if (stkCtr == 81) {
+        return false;
+    }
+    
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 9; j++) {
             for (int v = 1; v < 10; v++) {
-                tmp = ~(grp[i][j].popen[v]);
-                if (tmp.count() == 1) {
-                    found_forced = true;
+                bits9 = ~(grp[i][j].popen[v]);
+                if (bits9.count() == 1) {
                     // find the only open position
-                    int pix = tmp._Find_first();
+                    int pix = bits9._Find_first();
                     int py = grp[i][j].members[pix];
                     std::cout << "Found candidate: " << py << ", " << v << std::endl;
                     
-                    rslt = add_placement( {(uint16_t)py, 0b0000000000 | 1 << v} );
-                    if (rslt == 1) {
+                    plcmnt = {(uint16_t)py, 0b0000000000 | 1 << v};
+                    addRslt = add_placement( plcmnt );
+                    if (addRslt == 1) {
                         std::cout << "duplicate" << std::endl;
                         continue;
-                    } else if (rslt == -1) {
-                        found_violation = true;
-                        break;
-                    } else {
-                        found_forced;
-                        continue;
+                    } 
+                    if (addRslt == -1) {
+                        std::cout << "rule violation" << std::endl;
+                        return false;
                     }
+                    found_forced = true;
+                    continue;
                 }
             }
-            if (found_violation) {
-                break;
-            }
-        }
-        if (found_violation) {
-            break;
         }
     }
+
+    for (int i = 0; i < 81; i++) {
+
+        if (spot[0][i/9][i%9] == 0) {
+            continue;
+        }
+
+        bits10 = ~(posn[i].vopen);
+        bits10 &= 0b1111111110;
+        cnt = bits10.count();
+
+        if (found_forced) {
+            if (cnt == 1) {
+                plcmnt = {(uint16_t)i, bits10};
+                addRslt = add_placement( plcmnt );
+                if (addRslt == 1) {
+                    std::cout << "duplicate" << std::endl;
+                    continue;
+                } 
+                if (addRslt == -1) {
+                    std::cout << "rule violation" << std::endl;
+                    return false;
+                }
+            }
+            continue;
+        } else {
+            if (cnt < altsCnt) {
+                altsCnt = cnt;
+                ix = i;
+                bits10 = ~(posn[ix].vopen);
+                bits10 &= 0b1111111110;
+
+                plcmnt = {(uint16_t)i, bits10};
+                addRslt = add_placement( plcmnt );
+                if (addRslt == 1) {
+                    std::cout << "duplicate" << std::endl;
+                    continue;
+                } 
+                if (addRslt == -1) {
+                    std::cout << "rule violation" << std::endl;
+                    return false;
+                }
+            }
+        }
+    }
+
+    if (!found_forced) {
+        bits10 = ~(posn[ix].vopen);
+        bits10 &= 0b1111111110;
+
+        plcmnt = {(uint16_t)ix, bits10};
+        addRslt = add_placement( plcmnt );
+
+        if (addRslt == -1) {
+            std::cout << "rule violation" << std::endl;
+            return false;
+        }
+    }
+    
     return true;
 }
 
@@ -262,6 +325,11 @@ int Suku::solve() {
             } else {
                 continue;
             }
+        }
+
+        // find_placements() encountered rule violation
+        if ( find_alt_placement() ) {
+            continue;
         } else {
             return -1;
         }
