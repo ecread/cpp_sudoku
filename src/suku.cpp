@@ -122,6 +122,7 @@ int Suku::add_placement(Placement plcmntx) {
     int px = plcmntx.p;
     std::bitset<10> altsx = plcmntx.alts;
     int vx = altsx._Find_first();
+    int countx = altsx.count();
 
     int checkVal;
     int rcbx[3];
@@ -156,14 +157,17 @@ int Suku::add_placement(Placement plcmntx) {
     }
 
     // Add to stack
-    //stk[stkCtr++] = {(uint16_t)px, 0b0000000000 | 1 << vx};
     stk[stkCtr++] = plcmntx;
+    if (countx > 1) {
+        branchStk.push_back(stkCtr);
+    }
 
     return 0;
 }
 
-void Suku::remove_placement(Placement plcmntx) {
+void Suku::remove_placement() {
 
+    Placement plcmntx = stk[--stkCtr];
     int px = plcmntx.p;
     std::bitset<10> altsx = plcmntx.alts;
     int vx = altsx._Find_first();
@@ -302,7 +306,33 @@ bool Suku::find_placements() {
 }
 
 bool Suku::find_alt_placement() {
-    return true;
+
+    if (branchStk.size() == 0) {
+        return false;
+    }
+    int branchIdx = branchStk[branchStk.size()-1];
+    int stkCntWhenAlts = branchStk[branchIdx];
+
+    while (stkCtr > stkCntWhenAlts) {
+        remove_placement();
+    }
+
+    Placement plcmntx = stk[stkCtr-1];
+    remove_placement();
+    int px = plcmntx.p;
+    std::bitset<10> altsx = plcmntx.alts;
+    int vx = altsx._Find_first();
+    altsx.reset(vx);
+    int countx = altsx.count();
+    if (countx == 1) {
+        // placement no longer has alternates
+        branchStk.pop_back();
+    }
+    if (add_placement( {(uint16_t)px, altsx} ) == 0) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 int Suku::solve() {

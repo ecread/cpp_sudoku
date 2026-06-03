@@ -67,9 +67,8 @@ public:
     void adjust_for_remove(int py, int vx);
     bool find_placements();
     bool find_alt_placement();
-    //int add_placement(const int p, const int v);
     int add_placement(Placement plcmntx);
-    void remove_placement(Placement plcmntx);
+    void remove_placement();
     int solve();
 };
 
