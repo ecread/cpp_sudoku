@@ -126,17 +126,18 @@ int Suku::add_placement(Placement plcmntx) {
 
     int checkVal;
     int rcbx[3];
-    for (int i = 0; i < 3; i++) {
-        rcbx[i] = posn[px].rcb[i];
-    }
 
     // Check candidate placement
     checkVal = check_placement(px, vx);
     if (checkVal != 0) {
         return checkVal;
     }
+    for (int i = 0; i < 3; i++) {
+        rcbx[i] = posn[px].rcb[i];
+    }
 
-    std::cout << "add plcmnt: " << px << ", " << vx << std::endl;
+    std::cout << "add plcmnt: " << px << ", " << vx
+        << "\t[" << stkCtr << "]"<< std::endl;
     // add to level 0 for board
     spot[0][rcbx[0]][rcbx[1]] = vx;
 
@@ -211,7 +212,11 @@ bool Suku::find_placements() {
 
     int altsCnt = 9;
     int cnt;
-    int ix;
+    int ix = -1;
+
+    int tmpbtop;
+
+    std::cout << "FIND_PLACEMENTS" << std::endl;
 
     if (stkCtr == 81) {
         return false;
@@ -225,8 +230,7 @@ bool Suku::find_placements() {
                     // find the only open position
                     int pix = bits9._Find_first();
                     int py = grp[i][j].members[pix];
-                    std::cout << "Found candidate: " << py << ", " << v << std::endl;
-                    
+                                        
                     plcmnt = {(uint16_t)py, 0b0000000000 | 1 << v};
                     addRslt = add_placement( plcmnt );
                     if (addRslt == 1) {
@@ -246,7 +250,7 @@ bool Suku::find_placements() {
 
     for (int i = 0; i < 81; i++) {
 
-        if (spot[0][i/9][i%9] == 0) {
+        if (spot[0][i/9][i%9] != 0) {
             continue;
         }
 
@@ -257,6 +261,9 @@ bool Suku::find_placements() {
         if (found_forced) {
             if (cnt == 1) {
                 plcmnt = {(uint16_t)i, bits10};
+                if (stkCtr > 75) {
+                    std::cout << "(found_forced==true)\t" << i << "," << bits10 << std::endl;
+                }
                 addRslt = add_placement( plcmnt );
                 if (addRslt == 1) {
                     std::cout << "duplicate" << std::endl;
@@ -267,62 +274,69 @@ bool Suku::find_placements() {
                     return false;
                 }
             }
-            continue;
         } else {
-            if (cnt < altsCnt) {
+            if (cnt < altsCnt && cnt > 0) {
                 altsCnt = cnt;
                 ix = i;
-                bits10 = ~(posn[ix].vopen);
-                bits10 &= 0b1111111110;
-
-                plcmnt = {(uint16_t)i, bits10};
-                addRslt = add_placement( plcmnt );
-                if (addRslt == 1) {
-                    std::cout << "duplicate" << std::endl;
-                    continue;
-                } 
-                if (addRslt == -1) {
-                    std::cout << "rule violation" << std::endl;
-                    return false;
-                }
             }
         }
     }
 
     if (!found_forced) {
-        bits10 = ~(posn[ix].vopen);
-        bits10 &= 0b1111111110;
+        if (ix >= 0) {
+            bits10 = ~(posn[ix].vopen);
+            bits10 &= 0b1111111110;
+        } else {
+            return false;
+        }
 
         plcmnt = {(uint16_t)ix, bits10};
+        
         addRslt = add_placement( plcmnt );
 
         if (addRslt == -1) {
             std::cout << "rule violation" << std::endl;
             return false;
         }
+        
+        std::cout << "\t\t(found_forced==false)\t" << ix << "," << bits10 << std::endl;
+        std::cout << "\t\tstkCtr: " << stkCtr << std::endl;
+        std::cout << "\t\tbranchStk.size(): " << branchStk.size() << std::endl;
+        tmpbtop = branchStk[branchStk.size()-1];
+        std::cout << "\t\ttop element in branchStk: " << tmpbtop << std::endl;
+        plcmnt = stk[tmpbtop-1];
+        std::cout << "\t\ttop element in Stk: " << plcmnt.p << "," << plcmnt.alts  << std::endl;
+        //branchStk.push_back(stkCtr);
+        
     }
     
     return true;
 }
 
 bool Suku::find_alt_placement() {
-
+    std::cout << "FIND_ALT_PLACEMENT" << std::endl;
     if (branchStk.size() == 0) {
         return false;
     }
-    int branchIdx = branchStk[branchStk.size()-1];
-    int stkCntWhenAlts = branchStk[branchIdx];
+    int stkCntWhenAlts = branchStk[branchStk.size()-1];
+    std::cout << "\t\tstkCntWhenAlts: " << stkCntWhenAlts << std::endl;
 
-    while (stkCtr > stkCntWhenAlts) {
+    while (stkCtr >= stkCntWhenAlts) {
         remove_placement();
     }
 
-    Placement plcmntx = stk[stkCtr-1];
-    remove_placement();
+  std::cout   << "\t\tafter removals, stkCtr: " << stkCtr << std::endl;
+
+    Placement plcmntx = stk[stkCtr];
+    std::cout   << "\t\tafter removals, initial plcmnt: " << plcmntx.p << "," << plcmntx.alts << std::endl;
+
     int px = plcmntx.p;
     std::bitset<10> altsx = plcmntx.alts;
     int vx = altsx._Find_first();
     altsx.reset(vx);
+    plcmntx = {(uint16_t)px, altsx};
+    std::cout  << "\t\tafter removals, adjusted plcmnt: " << plcmntx.p << "," << plcmntx.alts << std::endl;
+
     int countx = altsx.count();
     if (countx == 1) {
         // placement no longer has alternates
@@ -337,31 +351,44 @@ bool Suku::find_alt_placement() {
 
 int Suku::solve() {
     /*
+    "advance" action:
     Repeatedly call find_placements() while it returns true
     and the count of placments on the board is less than 81.
     If 81 placements can be installed, return 0 if there are
     no alternatives to try, else return 1.
     If find_placements() returns false, it has encountered
-    a rule violation; in this case return -1.
-    */
-    while (true) {
-        if ( find_placements() ) {
-            if (stkCtr == 81) {
-                if (branchStk.size() == 0) {
-                    return 0;
-                } else {
-                    return 1;
-                }
-            } else {
-                continue;
-            }
-        }
+    a rule violation; in this case call find_alt_placement().
 
-        // find_placements() encountered rule violation
-        if ( find_alt_placement() ) {
-            continue;
+    "retreat" action:
+    If find_altPlacement() returns true, resume the "advance" action.
+    Otherwise, no alternative placement may be found; return false.
+    */
+
+    /*
+    Entry into this function when there have been 81 placements
+    signals that another solution is being sought, so backtrack.
+    */
+   if (stkCtr == 81) {
+        goto retreat;
+   }
+
+advance:
+    while ( find_placements() ) {
+        if (stkCtr == 81) {
+            if (branchStk.size() == 0) {
+                return 0;
+            } else {
+                return 1;
+            }
         } else {
-            return -1;
+            continue;
         }
+    }
+retreat:
+    // find_placements() encountered rule violation
+    if ( find_alt_placement() ) {
+        goto advance;
+    } else {
+        return -1;
     }
 }
