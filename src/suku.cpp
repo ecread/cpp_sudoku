@@ -30,13 +30,14 @@ bool Suku::readBoard(const std::string filename) {
         }
     }
 
-    std::cout << "Initial count of placements: "
+    std::cout << "\nInitial count of placements: "
               << stkCtr << std::endl;
 
     return true;
 }
 
 void Suku::writeBoard() {
+    //std::cout << "\n";
     for (int i = 0; i < 81; ++i) {
         int r = i / 9;
         int c = i % 9;
@@ -119,6 +120,8 @@ int Suku::add_placement(Placement plcmntx) {
     // int indic = check_placement(px, vx);
     // if (indic) { return indic; }
 
+    static int pcount = 0;
+
     int px = plcmntx.p;
     std::bitset<10> altsx = plcmntx.alts;
     int vx = altsx._Find_first();
@@ -136,18 +139,12 @@ int Suku::add_placement(Placement plcmntx) {
         rcbx[i] = posn[px].rcb[i];
     }
 
-    std::cout << "add plcmnt: " << px << ", " << vx
-        << "\t[" << stkCtr << "]"<< std::endl;
-    // add to level 0 for board
-    spot[0][rcbx[0]][rcbx[1]] = vx;
-
     for (int i = 0; i < 3; i++) {
         //for (int py : grp[i][rcbx[i]].membersSet) {
         for (int j = 0; j < 9; j++) {
             int py = grp[i][rcbx[i]].members[j];
             // Adjust spot, popen and vopen values
             adjust_for_add(py, vx); 
-	        //std::cout << "adjust_for_add: " << py << "," << vx;
         } 
     }
     for (int vv = 1; vv < 10; vv++) {
@@ -163,6 +160,22 @@ int Suku::add_placement(Placement plcmntx) {
         branchStk.push_back(stkCtr);
     }
 
+    // add to level 0 for board
+    spot[0][rcbx[0]][rcbx[1]] = vx;
+
+    if (countx > 1) {
+        // placement with alternatives
+        std::cout << "\n\t\tadvance, alt placement_count: " << branchStk.size() << ", "
+            << "[" << std::setw(2) << plcmntx.p << "," 
+            << plcmntx.alts << "]" << std::endl;
+        pcount = 0;
+    }
+    std::cout << "[" << std::setw(2) << plcmntx.p << "," << vx << "]" <<  "  ";
+    if (++pcount == 10) {
+        std::cout << std::endl;
+        pcount = 0;
+    }
+
     return 0;
 }
 
@@ -172,8 +185,6 @@ void Suku::remove_placement() {
     int px = plcmntx.p;
     std::bitset<10> altsx = plcmntx.alts;
     int vx = altsx._Find_first();
-
-    std::cout << "remove plcmnt: " << px << ", " << vx << std::endl;
 
     int rcbx[3];
     for (int i = 0; i < 3; i++) {
@@ -214,11 +225,10 @@ bool Suku::find_placements() {
     int cnt;
     int ix = -1;
 
-    int tmpbtop;
-
-    std::cout << "FIND_PLACEMENTS" << std::endl;
+    // int tmpbtop;
 
     if (stkCtr == 81) {
+        std::cout << std::endl;
         return false;
     }
     
@@ -261,9 +271,9 @@ bool Suku::find_placements() {
         if (found_forced) {
             if (cnt == 1) {
                 plcmnt = {(uint16_t)i, bits10};
-                if (stkCtr > 75) {
-                    std::cout << "(found_forced==true)\t" << i << "," << bits10 << std::endl;
-                }
+                // if (stkCtr > 75) {
+                //     std::cout << "(found_forced==true)\t" << i << "," << bits10 << std::endl;
+                // }
                 addRslt = add_placement( plcmnt );
                 if (addRslt == 1) {
                     std::cout << "duplicate" << std::endl;
@@ -287,6 +297,7 @@ bool Suku::find_placements() {
             bits10 = ~(posn[ix].vopen);
             bits10 &= 0b1111111110;
         } else {
+            // std::cout << "\nNO PLACEMENTS" << std::endl;
             return false;
         }
 
@@ -298,50 +309,38 @@ bool Suku::find_placements() {
             std::cout << "rule violation" << std::endl;
             return false;
         }
-        
-        std::cout << "\t\t(found_forced==false)\t" << ix << "," << bits10 << std::endl;
-        std::cout << "\t\tstkCtr: " << stkCtr << std::endl;
-        std::cout << "\t\tbranchStk.size(): " << branchStk.size() << std::endl;
-        tmpbtop = branchStk[branchStk.size()-1];
-        std::cout << "\t\ttop element in branchStk: " << tmpbtop << std::endl;
-        plcmnt = stk[tmpbtop-1];
-        std::cout << "\t\ttop element in Stk: " << plcmnt.p << "," << plcmnt.alts  << std::endl;
-        //branchStk.push_back(stkCtr);
-        
     }
     
     return true;
 }
 
 bool Suku::find_alt_placement() {
-    std::cout << "FIND_ALT_PLACEMENT" << std::endl;
     if (branchStk.size() == 0) {
         return false;
     }
     int stkCntWhenAlts = branchStk[branchStk.size()-1];
-    std::cout << "\t\tstkCntWhenAlts: " << stkCntWhenAlts << std::endl;
 
     while (stkCtr >= stkCntWhenAlts) {
         remove_placement();
     }
 
-  std::cout   << "\t\tafter removals, stkCtr: " << stkCtr << std::endl;
-
     Placement plcmntx = stk[stkCtr];
-    std::cout   << "\t\tafter removals, initial plcmnt: " << plcmntx.p << "," << plcmntx.alts << std::endl;
 
     int px = plcmntx.p;
     std::bitset<10> altsx = plcmntx.alts;
     int vx = altsx._Find_first();
     altsx.reset(vx);
     plcmntx = {(uint16_t)px, altsx};
-    std::cout  << "\t\tafter removals, adjusted plcmnt: " << plcmntx.p << "," << plcmntx.alts << std::endl;
 
     int countx = altsx.count();
     if (countx == 1) {
         // placement no longer has alternates
         branchStk.pop_back();
     }
+
+    std::cout  << "\n\t\tretreat, alt placement_count: " << branchStk.size() << ", "
+        << plcmntx.p << "," << plcmntx.alts << std::endl;
+
     if (add_placement( {(uint16_t)px, altsx} ) == 0) {
         return true;
     } else {
@@ -356,8 +355,7 @@ int Suku::solve() {
     and the count of placments on the board is less than 81.
     If 81 placements can be installed, return 0 if there are
     no alternatives to try, else return 1.
-    If find_placements() returns false, it has encountered
-    a rule violation; in this case call find_alt_placement().
+    If find_placements() returns false call find_alt_placement().
 
     "retreat" action:
     If find_altPlacement() returns true, resume the "advance" action.

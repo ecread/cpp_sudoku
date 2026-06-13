@@ -14,6 +14,8 @@ int main() {
         rslt = suku.solve();
 
         if (rslt >= 0) {
+            std::cout << std::endl;
+            std::cout << std::endl;
             suku.writeBoard();
             if (rslt == 0) {
                 std::cout << "Solution is unique." << std::endl;
