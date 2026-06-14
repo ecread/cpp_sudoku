@@ -15,12 +15,15 @@ public:
         int rcb[3];
         // for posn i, the member index in row,col, blk
         int rcbIdx[3]; 
-        std::bitset<10> vopen;
+        std::bitset<10> vopen = 0b1111111110;
     };
     struct Grp {
         std::vector<int> members;
         std::unordered_set<int> membersSet;
-        std::bitset<9> popen[10] = {};
+        std::bitset<9> popen[10] = {
+            0b111111111, 0b111111111, 0b111111111, 0b111111111, 0b111111111, 
+            0b111111111, 0b111111111, 0b111111111, 0b111111111, 0b111111111 
+        };
     };
     
     struct Placement {
@@ -62,12 +65,12 @@ public:
 
     bool readBoard(std::string filename);
     void writeBoard();
-    int check_placement(const int p, const int v);
+    bool check_placement(const int p, const int v);
     void adjust_for_add(int py, int vx);
     void adjust_for_remove(int py, int vx);
     bool find_placements();
     bool find_alt_placement();
-    int add_placement(Placement plcmntx);
+    bool add_placement(Placement plcmntx);
     void remove_placement();
     int solve();
 };
