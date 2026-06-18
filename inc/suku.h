@@ -66,6 +66,9 @@ public:
 
     bool readBoard(std::string filename);
     void writeBoard();
+    int rcb(int pi, int vi);
+    int rcbi(int pi, int vi);
+    std::bitset<9>& pgopenBits(int v, int pi, int gi);
     bool check_placement(const int p, const int v);
     void adjust_for_add(int py, int vx);
     void adjust_for_remove(int py, int vx);

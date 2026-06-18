@@ -5,6 +5,18 @@
 
 #include <vector>
 
+int Suku::rcb(int pi,int gi) {
+    return posn[pi].rcb[gi];
+}
+
+int Suku::rcbi(int pi, int gi) {
+    return posn[pi].rcbIdx[gi];
+}
+
+std::bitset<9>& Suku::pgopenBits(int v, int pi, int gi) {
+    return grp[gi][rcb(pi, gi)].popen[v];
+}
+
 bool Suku::readBoard(const std::string filename) {
     bool checkit = true;
     int valArray[81] = {};
@@ -13,8 +25,8 @@ bool Suku::readBoard(const std::string filename) {
         std::cout << "Failed to open file" << std::endl;
         return false;
     }
-    for (int i = 0; i < 81; ++i) {
-        if (!(file >> valArray[i])) {
+    for (int pi = 0; pi < 81; ++pi) {
+        if (!(file >> valArray[pi])) {
             std::cout << "Too few values in starting board" << std::endl;
             return false;
         }
@@ -38,9 +50,9 @@ bool Suku::readBoard(const std::string filename) {
 }
 
 void Suku::writeBoard() {
-    for (int i = 0; i < 81; ++i) {
-        int r = i / 9;
-        int c = i % 9;
+    for (int pi = 0; pi < 81; ++pi) {
+        int r = pi / 9;
+        int c = pi % 9;
 
         // Print the number with a consistent width
         std::cout << std::setw(1) << spot[0][r][c] << " ";
@@ -69,41 +81,33 @@ bool Suku::check_placement(int px, int vx) {
     return false, else return true
     */
 
-    int rcbx[3];
-    for (int i = 0; i < 3; i++) {
-        rcbx[i] = posn[px].rcb[i];
-    }
-
     for (int i = 0; i < 3; i++) {  // HERE
-        if ( !grp[i][rcbx[i]].popen[vx].test(posn[px].rcbIdx[i]) ) {
+        if ( !pgopenBits(vx, px, i).test(rcbi(px, i)) ) {
             return false; // violation: would duplicate value in row, col or block
         }
     }
-
     return true;
 }
 
 void Suku::adjust_for_add(int py, int vx) {
     spot[vx][posn[py].rcb[0]][posn[py].rcb[1]] += 1;
     if (spot[vx][posn[py].rcb[0]][posn[py].rcb[1]] == 1) {
-        for (int i = 0; i < 3; i++) {
-            grp[i][posn[py].rcb[i]].popen[vx].reset(posn[py].rcbIdx[i]);
+        for (int gi = 0; gi < 3; gi++) {
+            pgopenBits(vx, py, gi).reset(rcbi(py, gi));
         }
         posn[py].vopen.reset(vx);
     }
 }
 
 void Suku::adjust_for_remove(int py, int vx) {
-    // py: posn index, vx: value
     spot[vx][posn[py].rcb[0]][posn[py].rcb[1]] -= 1;
     if (spot[vx][posn[py].rcb[0]][posn[py].rcb[1]] == 0) {
-        for (int i = 0; i < 3; i++) {
-            grp[i][posn[py].rcb[i]].popen[vx].set(posn[py].rcbIdx[i]);
+        for (int gi = 0; gi < 3; gi++) {
+            pgopenBits(vx, py, gi).set(rcbi(py, gi));
         }
         posn[py].vopen.set(vx);
     }
 }
-
 
 bool Suku::add_placement(Placement plcmntx, bool check) {
     static int pcount = 0;
@@ -111,7 +115,6 @@ bool Suku::add_placement(Placement plcmntx, bool check) {
     std::bitset<10> altsx = plcmntx.alts;
     int vx = altsx._Find_first();
     int countx = altsx.count();
-    int rcbx[3];
     
     if (check) {
         if (!check_placement(px, vx)) {
@@ -119,21 +122,17 @@ bool Suku::add_placement(Placement plcmntx, bool check) {
         }
     }
 
-    for (int i = 0; i < 3; i++) {
-        rcbx[i] = posn[px].rcb[i];
-    }
-
-    for (int i = 0; i < 3; i++) {
+    for (int gi = 0; gi < 3; gi++) {
         for (int j = 0; j < 9; j++) {
-            int py = grp[i][rcbx[i]].members[j]; // HERE
+            int py = grp[gi][rcb(px, gi)].members[j]; // HERE
             adjust_for_add(py, vx); 
         } 
     }
-    for (int vv = 1; vv < 10; vv++) {
-         adjust_for_add(px, vv);
+    for (int v = 1; v < 10; v++) {
+         adjust_for_add(px, v);
     }
-    for (int i = 0; i < 3; i++) {
-        grp[i][rcbx[i]].membersSet.erase(px);
+    for (int gi = 0; gi < 3; gi++) {
+        grp[gi][rcb(px, gi)].membersSet.erase(px);
     }
 
     // Add to stack
@@ -143,7 +142,7 @@ bool Suku::add_placement(Placement plcmntx, bool check) {
     }
 
     // add to level 0 for board
-    spot[0][rcbx[0]][rcbx[1]] = vx;
+    spot[0][rcb(px,0)][rcb(px,1)] = vx;
 
     if (countx > 1) {
         // placement with alternatives
@@ -168,28 +167,21 @@ void Suku::remove_placement() {
     std::bitset<10> altsx = plcmntx.alts;
     int vx = altsx._Find_first();
 
-    int rcbx[3];
-    for (int i = 0; i < 3; i++) {
-        rcbx[i] = posn[px].rcb[i];
-    }
-
     // erase from level 0
-    spot[0][rcbx[0]][rcbx[1]] = 0;
+    spot[0][rcb(px,0)][rcb(px,1)] = 0;
 
-    for (int i = 0; i < 3; i++) {
+    for (int gi = 0; gi < 3; gi++) {
         for (int j = 0; j < 9; j++) {
-            int py = grp[i][rcbx[i]].members[j];
-            // Adjust spot, popen and vopen values
-            adjust_for_remove(py, vx);
-        }
+            int py = grp[gi][rcb(px, gi)].members[j]; // HERE
+            adjust_for_remove(py, vx); 
+        } 
+    }
+    for (int v = 1; v < 10; v++) {
+        adjust_for_remove(px, v);
     }
 
-    for (int vv = 1; vv < 10; vv++) {
-        adjust_for_remove(px, vv);
-    }
-
-    for (int i = 0; i < 3; i++) {
-        grp[i][rcbx[i]].membersSet.insert(px);
+    for (int gi = 0; gi < 3; gi++) {
+        grp[gi][rcb(px, gi)].membersSet.insert(px);
     }
 
     return;
@@ -203,21 +195,21 @@ bool Suku::find_placements() {
 
     int altsCnt = 9;
     int cnt;
-    int ix = -1;
+    int pix = -1;
 
     if (stkCtr == 81) {
         std::cout << std::endl;
         return false;
     }
     
-    for (int i = 0; i < 3; i++) {
+    for (int gi = 0; gi < 3; gi++) {
         for (int j = 0; j < 9; j++) {
             for (int v = 1; v < 10; v++) {
-                bits9 = grp[i][j].popen[v];
+                bits9 = grp[gi][j].popen[v];
                 if (bits9.count() == 1) {
                     // find the only open position
                     int pix = bits9._Find_first();
-                    int py = grp[i][j].members[pix];
+                    int py = grp[gi][j].members[pix];
                                         
                     plcmnt = {(uint16_t)py, 0b0000000000 | 1 << v};
                     add_placement(plcmnt);
@@ -228,35 +220,34 @@ bool Suku::find_placements() {
         }
     }
 
-    for (int i = 0; i < 81; i++) {
-        if (spot[0][i/9][i%9] != 0) {
+    for (int pi = 0; pi < 81; pi++) {
+        if (spot[0][pi/9][pi%9] != 0) {
             continue;
         }
 
-        bits10 = posn[i].vopen;
-        //bits10 &= 0b1111111110;
+        bits10 = posn[pi].vopen;
         cnt = bits10.count();
 
         if (found_forced) {
             if (cnt == 1) {
-                plcmnt = {(uint16_t)i, bits10};
+                plcmnt = {(uint16_t)pi, bits10};
                 add_placement(plcmnt);
             }
         } else {
             if (cnt < altsCnt && cnt > 0) {
                 altsCnt = cnt;
-                ix = i;
+                pix = pi;
             }
         }
     }
 
     if (!found_forced) {
-        if (ix >= 0) {
-            bits10 = posn[ix].vopen;
+        if (pix >= 0) {
+            bits10 = posn[pix].vopen;
         } else {
             return false;
         }
-        plcmnt = {(uint16_t)ix, bits10};
+        plcmnt = {(uint16_t)pix, bits10};
         add_placement( plcmnt );
     }
     
@@ -307,15 +298,15 @@ int Suku::solve() {
     no alternatives to try, else return 1.
     If find_placements() returns false call find_alt_placement().
 
-    "retreat" action:
+    "retreat" (backtrack) action:
     If find_altPlacement() returns true, resume the "advance" action.
     Otherwise, no alternative placement may be found; return false.
-    */
 
-    /*
+    Note:
     Entry into this function when there have been 81 placements
     signals that another solution is being sought, so backtrack.
     */
+
    if (stkCtr == 81) {
         goto retreat;
    }
