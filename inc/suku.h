@@ -46,19 +46,20 @@ public:
     std::vector<int> branchStk;
 
     Suku() {
-        for (int i = 0; i < 81; i++) {
-            int r = i / 9;
-            int c = i % 9;
+        for (int pi = 0; pi < 81; pi++) {
+            int r = pi / 9;
+            int c = pi % 9;
             int b = (r / 3) * 3 + (c / 3);
 
-            posn[i].rcb[0] = r;  // row of posn[i]
-            posn[i].rcb[1] = c;  // column of posn[i]
-            posn[i].rcb[2] = b;  // sub-block of posn[i]
+            posn[pi].rcb[0] = r;  // row of posn[pi]
+            posn[pi].rcb[1] = c;  // column of posn[pi]
+            posn[pi].rcb[2] = b;  // sub-block of posn[pi]
 
-            for (int j = 0; j < 3; j++) {
-                grp[j][posn[i].rcb[j]].members.push_back(i); // vector of members in r, c, b
-                posn[i].rcbIdx[j] = grp[j][posn[i].rcb[j]].members.size() - 1; // index of member i in r, c, b
-                grp[j][posn[i].rcb[j]].membersSet.insert(i); // unordered set of members in r, c, b
+            for (int gi = 0; gi < 3; gi++) {
+                grp[gi][posn[pi].rcb[gi]].members.push_back(pi); // vector of members in r, c, b
+                // index of posn pi in r, c, b member list
+                posn[pi].rcbIdx[gi] = grp[gi][posn[pi].rcb[gi]].members.size() - 1;
+                grp[gi][posn[pi].rcb[gi]].membersSet.insert(pi); // unordered set of members in r, c, b
             }
         }
     }
@@ -70,7 +71,7 @@ public:
     void adjust_for_remove(int py, int vx);
     bool find_placements();
     bool find_alt_placement();
-    bool add_placement(Placement plcmntx);
+    bool add_placement(Placement plcmntx, bool check=false);
     void remove_placement();
     int solve();
 };

@@ -6,6 +6,7 @@
 #include <vector>
 
 bool Suku::readBoard(const std::string filename) {
+    bool checkit = true;
     int valArray[81] = {};
     std::ifstream file(filename);
     if (!file) {
@@ -22,7 +23,7 @@ bool Suku::readBoard(const std::string filename) {
     for (int pi = 0; pi < 81; pi++) {
         int v = valArray[pi];
         if (v) {
-            if ( !add_placement({(uint16_t)pi, 0b0000000000 | 1 << v}) ) {
+            if ( !add_placement( {(uint16_t)pi, 0b0000000000 | 1 << v}, checkit ) ) {
                 std::cout << "Board has rule violation at position: "
                     << pi << ", terminating" << std::endl;
                 return false;
@@ -103,8 +104,8 @@ void Suku::adjust_for_remove(int py, int vx) {
     }
 }
 
-//int Suku::add_placement(int px, int vx) {
-bool Suku::add_placement(Placement plcmntx) {
+
+bool Suku::add_placement(Placement plcmntx, bool check) {
     static int pcount = 0;
     int px = plcmntx.p;
     std::bitset<10> altsx = plcmntx.alts;
@@ -112,8 +113,10 @@ bool Suku::add_placement(Placement plcmntx) {
     int countx = altsx.count();
     int rcbx[3];
     
-    if (!check_placement(px, vx)) {
-        return false;
+    if (check) {
+        if (!check_placement(px, vx)) {
+            return false;
+        }
     }
 
     for (int i = 0; i < 3; i++) {
@@ -144,7 +147,8 @@ bool Suku::add_placement(Placement plcmntx) {
 
     if (countx > 1) {
         // placement with alternatives
-        std::cout << "\n\t\tadvance, alt placement_count: " << branchStk.size() << ", "
+        std::cout << "\n\t\tadvance, alternate placements count: "
+            << branchStk.size() << ", "
             << "[" << std::setw(2) << plcmntx.p << "," 
             << plcmntx.alts << "]" << std::endl;
         pcount = 0;
@@ -283,7 +287,8 @@ bool Suku::find_alt_placement() {
         branchStk.pop_back();
     }
 
-    std::cout  << "\n\t\tretreat, alt placement_count: " << branchStk.size() << ", "
+    std::cout  << "\n\t\tretreat, alternate placements count: "
+        << branchStk.size() << ", "
         << plcmntx.p << "," << plcmntx.alts << std::endl;
 
     if ( add_placement({(uint16_t)px, altsx}) ) {
