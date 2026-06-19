@@ -81,7 +81,7 @@ bool Suku::check_placement(int px, int vx) {
     return false, else return true
     */
 
-    for (int i = 0; i < 3; i++) {  // HERE
+    for (int i = 0; i < 3; i++) { 
         if ( !pgopenBits(vx, px, i).test(rcbi(px, i)) ) {
             return false; // violation: would duplicate value in row, col or block
         }
@@ -90,8 +90,8 @@ bool Suku::check_placement(int px, int vx) {
 }
 
 void Suku::adjust_for_add(int py, int vx) {
-    spot[vx][posn[py].rcb[0]][posn[py].rcb[1]] += 1;
-    if (spot[vx][posn[py].rcb[0]][posn[py].rcb[1]] == 1) {
+    spot[vx][rcb(py,0)][rcb(py,1)] += 1;
+    if (spot[vx][rcb(py,0)][rcb(py,1)] == 1) {
         for (int gi = 0; gi < 3; gi++) {
             pgopenBits(vx, py, gi).reset(rcbi(py, gi));
         }
@@ -100,8 +100,8 @@ void Suku::adjust_for_add(int py, int vx) {
 }
 
 void Suku::adjust_for_remove(int py, int vx) {
-    spot[vx][posn[py].rcb[0]][posn[py].rcb[1]] -= 1;
-    if (spot[vx][posn[py].rcb[0]][posn[py].rcb[1]] == 0) {
+    spot[vx][rcb(py,0)][rcb(py,1)] -= 1;
+    if (spot[vx][rcb(py,0)][rcb(py,1)] == 0) {
         for (int gi = 0; gi < 3; gi++) {
             pgopenBits(vx, py, gi).set(rcbi(py, gi));
         }
@@ -172,7 +172,7 @@ void Suku::remove_placement() {
 
     for (int gi = 0; gi < 3; gi++) {
         for (int j = 0; j < 9; j++) {
-            int py = grp[gi][rcb(px, gi)].members[j]; // HERE
+            int py = grp[gi][rcb(px, gi)].members[j];
             adjust_for_remove(py, vx); 
         } 
     }
@@ -264,15 +264,12 @@ bool Suku::find_alt_placement() {
         remove_placement();
     }
 
-    Placement plcmntx = stk[stkCtr];
-
-    int px = plcmntx.p;
-    std::bitset<10> altsx = plcmntx.alts;
+    Placement& plcmntx = stk[stkCtr];
+    std::bitset<10>& altsx = plcmntx.alts;
     int vx = altsx._Find_first();
     altsx.reset(vx);
-    plcmntx = {(uint16_t)px, altsx};
-
     int countx = altsx.count();
+
     if (countx == 1) {
         // placement no longer has alternates
         branchStk.pop_back();
@@ -282,7 +279,8 @@ bool Suku::find_alt_placement() {
         << branchStk.size() << ", "
         << plcmntx.p << "," << plcmntx.alts << std::endl;
 
-    if ( add_placement({(uint16_t)px, altsx}) ) {
+    // if ( add_placement({(uint16_t)px, altsx}) ) {
+    if (add_placement(plcmntx)) {
         return true;
     } else {
         return false;
